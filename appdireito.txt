@@ -1,0 +1,330 @@
+import React, { useState, useEffect, useCallback } from 'react';
+
+// =================================================================
+// 1. MOCK DATA (Simulação de Fonte de Dados - Questões OAB-SP)
+// =================================================================
+// Gerado para as 6 disciplinas do 1º Semestre, com Justificativa detalhada.
+const mockDataQuestoes = [
+    // --- INTRODUÇÃO AO ESTUDO DO DIREITO (IED) ---
+    { id: 1, materia: "INTRODUÇÃO AO ESTUDO DO DIREITO (IED)", enunciado: "Qual das teorias abaixo define a norma jurídica a partir da coerção exercida pelo Estado?", opcoes: ["Teoria Pura do Direito", "Teoria Tridimensional do Direito", "Teoria Imperativista", "Teoria da Instituição"], respostaCorreta: "Teoria Imperativista", justificativa: "A Teoria Imperativista vê o Direito como um conjunto de comandos emanados de uma autoridade soberana (o Estado), sendo a coerção o elemento essencial para a sua validade e eficácia. A Teoria Pura de Kelsen foca na validade formal; a Tridimensional de Reale abrange Fato, Valor e Norma." },
+    { id: 2, materia: "INTRODUÇÃO AO ESTUDO DO DIREITO (IED)", enunciado: "O que o conceito de 'Vigência' de uma norma jurídica determina?", opcoes: ["Sua aplicação retroativa", "Sua aptidão para produzir efeitos", "Sua aceitação social", "Sua constitucionalidade"], respostaCorreta: "Sua aptidão para produzir efeitos", justificativa: "A vigência refere-se ao período de tempo em que a norma é obrigatória e pode produzir seus efeitos jurídicos, ou seja, é o período de validade temporal da lei. É diferente de eficácia social (aplicação prática) ou validade formal." },
+    { id: 3, materia: "INTRODUÇÃO AO ESTUDO DO DIREITO (IED)", enunciado: "Segundo a Lei de Introdução às Normas do Direito Brasileiro (LINDB), quando a lei for omissa, o juiz deve decidir o caso utilizando, sucessivamente:", opcoes: ["A analogia, os costumes e os princípios gerais de direito", "Os costumes, a jurisprudência e a doutrina", "A equidade, a moral e a boa-fé", "A analogia, a doutrina e a jurisprudência"], respostaCorreta: "A analogia, os costumes e os princípios gerais de direito", justificativa: "A LINDB (Decreto-Lei nº 4.657/42), em seu Art. 4º, estabelece expressamente: 'Quando a lei for omissa, o juiz decidirá o caso de acordo com a analogia, os costumes e os princípios gerais de direito'." },
+
+    // --- CIÊNCIA POLÍTICA E TEORIA GERAL DO ESTADO ---
+    { id: 4, materia: "CIÊNCIA POLÍTICA E TEORIA GERAL DO ESTADO", enunciado: "De acordo com Max Weber, qual o elemento fundamental que caracteriza o Estado moderno?", opcoes: ["O monopólio do poder econômico", "A legitimidade do poder espiritual", "O monopólio do uso legítimo da força física em determinado território", "O domínio absoluto sobre a soberania popular"], respostaCorreta: "O monopólio do uso legítimo da força física em determinado território", justificativa: "Max Weber define o Estado como a comunidade humana que reivindica (com sucesso) o monopólio do uso legítimo da força física dentro de um determinado território. É a capacidade de impor a ordem pela força aceita pela sociedade que define a estatalidade." },
+    { id: 5, materia: "CIÊNCIA POLÍTICA E TEORIA GERAL DO ESTADO", enunciado: "Na teoria política clássica de Montesquieu, a separação dos poderes (Executivo, Legislativo e Judiciário) tem como principal finalidade:", opcoes: ["Concentrar o poder nas mãos do soberano", "Garantir a supremacia do Legislativo", "Evitar o abuso de poder e assegurar a liberdade", "Facilitar a cobrança de impostos"], respostaCorreta: "Evitar o abuso de poder e assegurar a liberdade", justificativa: "Montesquieu, em 'O Espírito das Leis', defende a separação e o equilíbrio dos poderes (Checks and Balances) como o meio essencial para impedir a tirania e proteger as liberdades individuais." },
+    { id: 6, materia: "CIÊNCIA POLÍTICA E TEORIA GERAL DO ESTADO", enunciado: "Qual regime político se caracteriza pela participação direta do povo nas decisões, sem a figura de representantes eleitos?", opcoes: ["Democracia Indireta", "Monarquia Parlamentar", "Democracia Semidireta", "Democracia Pura (Direta)"], respostaCorreta: "Democracia Pura (Direta)", justificativa: "Na Democracia Pura ou Direta, os cidadãos participam diretamente da formulação das leis e decisões, sem intermediação de representantes. É o modelo praticado na Grécia Antiga e, em pequena escala, por instrumentos modernos como o referendo (Democracia Semidireta)." },
+
+    // --- HISTÓRIA DO DIREITO ---
+    { id: 7, materia: "HISTÓRIA DO DIREITO", enunciado: "Qual o código jurídico da Antiguidade, datado de aproximadamente 1772 a.C., que se notabilizou pela aplicação da Lei de Talião ('olho por olho, dente por dente')?", opcoes: ["Código de Drácon", "Código de Hamurabi", "Leis das XII Tábuas", "Lei Mosaica"], respostaCorreta: "Código de Hamurabi", justificativa: "O Código de Hamurabi, da Mesopotâmia, é um dos mais antigos conjuntos de leis escritas e é famoso por codificar a Lei de Talião, embora sua aplicação fosse frequentemente modulada pela classe social das partes envolvidas." },
+    { id: 8, materia: "HISTÓRIA DO DIREITO", enunciado: "No Direito Romano, a distinção entre 'Jus Publicum' e 'Jus Privatum' foi consolidada por qual jurista clássico?", opcoes: ["Gaio", "Ulpiano", "Cícero", "Justiniano"], respostaCorreta: "Ulpiano", justificativa: "O jurista romano Domicio Ulpiano é o responsável pela clássica distinção entre Direito Público (referente ao Estado Romano) e Direito Privado (referente aos interesses dos particulares). Seu aforismo 'Publicum Jus est quod ad statum rei Romanae spectat, privatum quod ad singulorum utilitatem' é central para a teoria do Direito." },
+    { id: 9, materia: "HISTÓRIA DO DIREITO", enunciado: "Qual o evento histórico no Brasil marcou a transição do sistema jurídico de leis e costumes de Portugal para a primeira codificação de Direito Civil brasileira?", opcoes: ["A Proclamação da República (1889)", "A Independência do Brasil (1822)", "A promulgação do Código Civil de 1916", "A Revolução de 1930"], respostaCorreta: "A promulgação do Código Civil de 1916", justificativa: "O Código Civil de 1916 (Lei nº 3.071), de autoria de Clovis Bevilacqua, marcou o fim da vigência das Ordenações Filipinas no Brasil, substituindo a legislação colonial portuguesa e estabelecendo um marco de modernização jurídica." },
+
+    // --- DIREITOS HUMANOS ---
+    { id: 10, materia: "DIREITOS HUMANOS", enunciado: "O Princípio da Não-Regressão (ou Efeito Cláusula) em Direitos Humanos significa que:", opcoes: ["Os tratados de Direitos Humanos não podem ser ratificados", "Os direitos adquiridos não podem ser suprimidos ou diminuídos", "Apenas as leis federais podem tratar de Direitos Humanos", "O Estado não pode ser responsabilizado por violações passadas"], respostaCorreta: "Os direitos adquiridos não podem ser suprimidos ou diminuídos", justificativa: "O Princípio da Não-Regressão estabelece que o Estado, uma vez reconhecido um direito humano, não pode adotar medidas que o suprimam ou o restrinjam a um patamar inferior ao já alcançado, garantindo a evolução progressiva dos direitos." },
+    { id: 11, materia: "DIREITOS HUMANOS", enunciado: "A primeira dimensão (ou geração) dos Direitos Humanos está historicamente ligada a qual evento e quais direitos?", opcoes: ["Revolução Industrial, Direitos Sociais", "Guerra Fria, Direitos de Solidariedade", "Revolução Francesa, Direitos de Liberdade (Civis e Políticos)", "Era da Informação, Direitos Digitais"], respostaCorreta: "Revolução Francesa, Direitos de Liberdade (Civis e Políticos)", justificativa: "Os Direitos de Primeira Dimensão surgiram com o Iluminismo e as Revoluções Liberais (Francesa e Americana), focando nas liberdades individuais e na não-intervenção do Estado (direitos de 'não fazer')." },
+    { id: 12, materia: "DIREITOS HUMANOS", enunciado: "A dignidade da pessoa humana é considerada o fundamento da República Federativa do Brasil, conforme qual dispositivo legal?", opcoes: ["Art. 1º, II, da Constituição Federal", "Art. 1º, III, da Constituição Federal", "Art. 5º, caput, da Constituição Federal", "Art. 6º da Constituição Federal"], respostaCorreta: "Art. 1º, III, da Constituição Federal", justificativa: "O Art. 1º, inciso III, da Constituição Federal de 1988 estabelece que a dignidade da pessoa humana é um dos fundamentos do Estado Democrático de Direito brasileiro." },
+
+    // --- TEORIA GERAL DO CRIME (DIREITO PENAL) ---
+    { id: 13, materia: "TEORIA GERAL DO CRIME (DIREITO PENAL)", enunciado: "Segundo a Teoria Clássica ou Causalista da Ação, o crime é composto por quais elementos?", opcoes: ["Fato Típico, Ilicitude e Culpabilidade", "Tipicidade, Antijuridicidade e Punibilidade", "Conduta, Resultado e Nexo Causal", "Tipicidade, Culpabilidade e Periculosidade"], respostaCorreta: "Fato Típico, Ilicitude e Culpabilidade", justificativa: "A Teoria Tripartida do Crime, adotada majoritariamente no Brasil, define o crime como Fato Típico, Ilicitude (ou Antijuridicidade) e Culpabilidade. A Punibilidade é considerada uma consequência, e não um elemento do crime." },
+    { id: 14, materia: "TEORIA GERAL DO CRIME (DIREITO PENAL)", enunciado: "O Princípio da Legalidade (ou Reserva Legal), previsto no Art. 1º do Código Penal, pode ser resumido pela máxima:", opcoes: ["Ninguém será processado por lei anterior", "Não há crime sem lei anterior que o defina, nem pena sem prévia cominação legal", "A lei posterior só se aplica se for mais benéfica ao réu", "A ignorância da lei é inescusável"], respostaCorreta: "Não há crime sem lei anterior que o defina, nem pena sem prévia cominação legal", justificativa: "O Art. 1º do CP consagra o Princípio da Legalidade, que exige a existência de uma lei em sentido estrito (formal e material) para definir um crime e cominar uma pena. É o famoso aforismo latino 'Nullum crimen nulla poena sine praevia lege'." },
+    { id: 15, materia: "TEORIA GERAL DO CRIME (DIREITO PENAL)", enunciado: "A desistência voluntária e o arrependimento eficaz, previstos no Art. 15 do Código Penal, têm como consequência:", opcoes: ["A isenção total de pena para o agente", "A aplicação da pena do crime tentado", "A punição do agente apenas pelos atos já praticados", "A extinção da punibilidade pelo perdão judicial"], respostaCorreta: "A punição do agente apenas pelos atos já praticados", justificativa: "O Art. 15 do CP (ponte de ouro da Parte Geral) determina que o agente não será punido pelo crime que pretendia cometer (tentativa), mas responde apenas pelos atos já praticados que configurem outro crime ('punição do agente apenas pelos atos já praticados')." },
+
+    // --- TEORIA GERAL DO DIREITO CIVIL ---
+    { id: 16, materia: "TEORIA GERAL DO DIREITO CIVIL", enunciado: "Segundo o Código Civil brasileiro, qual a idade em que a pessoa atinge a capacidade civil plena, tornando-se absolutamente capaz para todos os atos da vida civil?", opcoes: ["16 anos", "18 anos", "21 anos", "14 anos, desde que emancipada"], respostaCorreta: "18 anos", justificativa: "O Art. 5º do Código Civil estabelece que a menoridade cessa aos 18 (dezoito) anos completos, quando a pessoa fica habilitada à prática de todos os atos da vida civil (capacidade civil plena)." },
+    { id: 17, materia: "TEORIA GERAL DO DIREITO CIVIL", enunciado: "O Princípio da Autonomia Privada, central no Direito Civil, manifesta-se principalmente através de qual instituto jurídico?", opcoes: ["O poder familiar", "O casamento obrigatório", "A liberdade contratual", "A sucessão legítima"], respostaCorreta: "A liberdade contratual", justificativa: "A Autonomia Privada é a liberdade de o indivíduo regular seus próprios interesses. Sua principal manifestação é a liberdade de contratar (Art. 421 do CC), ou seja, a faculdade de escolher com quem contratar, o que contratar e em que termos." },
+    { id: 18, materia: "TEORIA GERAL DO DIREITO CIVIL", enunciado: "A Personalidade Jurídica da pessoa natural começa:", opcoes: ["Com o registro de nascimento no cartório", "Com a concepção (nascituro)", "Com a maioridade civil (18 anos)", "Com o nascimento com vida"], respostaCorreta: "Com o nascimento com vida", justificativa: "O Art. 2º do Código Civil estabelece que 'A personalidade civil da pessoa começa do nascimento com vida; mas a lei põe a salvo, desde a concepção, os direitos do nascituro.' A aquisição plena da personalidade se dá com o nascimento e a respiração." },
+    { id: 19, materia: "TEORIA GERAL DO DIREITO CIVIL", enunciado: "Qual o instituto jurídico que permite a declaração judicial da morte presumida de uma pessoa que desaparece sem deixar vestígios?", opcoes: ["Interdição", "Emancipação", "Curatela", "Ausência"], respostaCorreta: "Ausência", justificativa: "O instituto da Ausência (Arts. 22 a 39 do CC) trata do desaparecimento de uma pessoa de seu domicílio sem deixar notícias, permitindo a sucessão provisória e, posteriormente, a sucessão definitiva, que equivale à declaração de morte presumida para efeitos patrimoniais." },
+    { id: 20, materia: "TEORIA GERAL DO DIREITO CIVIL", enunciado: "Os bens móveis são aqueles que:", opcoes: ["Podem ser transportados sem alteração na sua substância", "Estão ligados ao solo de forma permanente", "São inerentes à pessoa humana (direitos da personalidade)", "São considerados inalienáveis por lei"], respostaCorreta: "Podem ser transportados sem alteração na sua substância", justificativa: "O Art. 82 do Código Civil define que bens móveis são aqueles suscetíveis de movimento próprio, ou de remoção por força alheia, sem alteração da substância ou da destinação econômico-social." },
+];
+
+// =================================================================
+// 2. COMPONENTE PRINCIPAL DO APP
+// =================================================================
+const DisciplinasApp = () => {
+    // Lista de disciplinas para exibição na tela inicial
+    const listaDisciplinas = [
+        "INTRODUÇÃO AO ESTUDO DO DIREITO (IED)",
+        "CIÊNCIA POLÍTICA E TEORIA GERAL DO ESTADO",
+        "HISTÓRIA DO DIREITO",
+        "DIREITOS HUMANOS",
+        "TEORIA GERAL DO CRIME (DIREITO PENAL)",
+        "TEORIA GERAL DO DIREITO CIVIL"
+    ];
+
+    // Estados da Aplicação
+    const [materiaSelecionada, setMateriaSelecionada] = useState(null);
+    const [questoesFiltradas, setQuestoesFiltradas] = useState([]);
+    const [questaoAtualIndex, setQuestaoAtualIndex] = useState(0);
+    const [respostaSelecionada, setRespostaSelecionada] = useState(null);
+    const [quizFinalizado, setQuizFinalizado] = useState(false);
+    const [placar, setPlacar] = useState({ acertos: 0, erros: 0 });
+
+    // Função para iniciar o Quiz
+    const iniciarQuiz = (materia) => {
+        const questoes = mockDataQuestoes.filter(q => q.materia === materia);
+        setMateriaSelecionada(materia);
+        setQuestoesFiltradas(questoes);
+        setQuestaoAtualIndex(0);
+        setRespostaSelecionada(null);
+        setQuizFinalizado(false);
+        setPlacar({ acertos: 0, erros: 0 });
+    };
+
+    // Função para verificar a resposta e atualizar o placar
+    const verificarResposta = (resposta) => {
+        if (respostaSelecionada !== null) return; // Não permitir nova seleção
+
+        setRespostaSelecionada(resposta);
+        const questaoAtual = questoesFiltradas[questaoAtualIndex];
+
+        if (resposta === questaoAtual.respostaCorreta) {
+            setPlacar(prev => ({ ...prev, acertos: prev.acertos + 1 }));
+        } else {
+            setPlacar(prev => ({ ...prev, erros: prev.erros + 1 }));
+        }
+    };
+
+    // Função para avançar para a próxima questão
+    const avancarQuestao = () => {
+        const proximoIndex = questaoAtualIndex + 1;
+        if (proximoIndex < questoesFiltradas.length) {
+            setQuestaoAtualIndex(proximoIndex);
+            setRespostaSelecionada(null);
+        } else {
+            setQuizFinalizado(true);
+        }
+    };
+
+    // Função para retornar à tela inicial
+    const voltarInicio = () => {
+        setMateriaSelecionada(null);
+        setQuestoesFiltradas([]);
+    };
+
+    // =================================================================
+    // 3. FUNCIONALIDADE DE LEITURA POR VOZ (TEXT-TO-SPEECH - TTS)
+    // =================================================================
+    // **NOTA CRÍTICA:** A implementação real requer uma chamada de API e gerenciamento de áudio.
+    // O código abaixo é um PLACEHOLDER que simula a ativação, mas o fetch real
+    // do áudio e a reprodução devem ser tratados pelo motor de TTS do Gemini.
+    // O modelo deve ser `gemini-2.5-flash-preview-tts`
+    const apiKey = "SUA_API_KEY_AQUI"; // SUBSTITUIR PELA CHAVE REAL
+    const TTS_API_MODEL = "gemini-2.5-flash-preview-tts";
+
+    const lerPorVoz = useCallback((texto) => {
+        if (apiKey === "SUA_API_KEY_AQUI") {
+            alert("AVISO: A funcionalidade de Leitura por Voz está desativada. Insira a API Key do Gemini no código para ativar.");
+            console.error("TTS API Key não configurada.");
+            return;
+        }
+
+        // Simulação do log da chamada (o fetch real deve ser implementado aqui)
+        console.log(`TTS Ativado. Lendo: "${texto.substring(0, 50)}..." com o modelo ${TTS_API_MODEL}`);
+        
+        // **IMPLEMENTAÇÃO REAL (PSEUDOCÓDIGO):**
+        /*
+        fetch('https://api.gemini.google/tts', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model: TTS_API_MODEL,
+                text: texto,
+                voice: 'Kore' // Voz sugerida
+            })
+        })
+        .then(response => response.blob())
+        .then(blob => {
+            const url = URL.createObjectURL(blob);
+            const audio = new Audio(url);
+            audio.play();
+        })
+        .catch(error => console.error('Erro ao usar TTS API:', error));
+        */
+
+       // Exibição de um feedback simples na ausência do fetch real
+       alert(`Lendo por voz (Simulação): ${texto.substring(0, 50)}...`);
+
+    }, [apiKey]);
+
+    // =================================================================
+    // 4. COMPONENTES DE RENDERIZAÇÃO
+    // =================================================================
+
+    // Renderiza o Dashboard (Tela Inicial)
+    const renderDashboard = () => (
+        <div className="space-y-6">
+            <h2 className="text-3xl font-bold text-gray-800 border-b pb-3 mb-6">
+                📚 1º Semestre Direito - UNIP Paraíso
+            </h2>
+            <p className="text-lg text-gray-600 mb-8">
+                Selecione a matéria para iniciar a revisão de questões no formato OAB-SP.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {listaDisciplinas.map((materia) => (
+                    <button
+                        key={materia}
+                        onClick={() => iniciarQuiz(materia)}
+                        className="p-6 bg-white hover:bg-yellow-500 hover:text-white text-gray-800 font-semibold rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:scale-105 border border-gray-200"
+                    >
+                        {materia}
+                    </button>
+                ))}
+            </div>
+        </div>
+    );
+
+    // Renderiza a Tela do Quiz
+    const renderQuiz = () => {
+        if (questoesFiltradas.length === 0) return null;
+
+        const questaoAtual = questoesFiltradas[questaoAtualIndex];
+        const totalQuestoes = questoesFiltradas.length;
+        const indice = questaoAtualIndex + 1;
+
+        return (
+            <div className="space-y-6">
+                <div className="flex justify-between items-center border-b pb-4 mb-4">
+                    <h2 className="text-2xl font-bold text-gray-700">
+                        {materiaSelecionada}
+                    </h2>
+                    <span className="text-xl font-medium text-yellow-600">
+                        Questão {indice} de {totalQuestoes}
+                    </span>
+                </div>
+
+                {/* Enunciado e Leitura por Voz */}
+                <div className="bg-yellow-50 p-6 rounded-lg shadow-md border-l-4 border-yellow-500 relative">
+                    <p className="text-xl font-medium text-gray-800 mb-4">{questaoAtual.enunciado}</p>
+                    <button
+                        onClick={() => lerPorVoz(`Enunciado: ${questaoAtual.enunciado}. Opções: ${questaoAtual.opcoes.join(', ')}`)}
+                        className="absolute top-4 right-4 p-2 bg-yellow-600 text-white rounded-full hover:bg-yellow-700 transition"
+                        title="Leitura por Voz (TTS)"
+                    >
+                        {/* Ícone de alto-falante simples (ou SVG) */}
+                        🔊
+                    </button>
+                </div>
+
+                {/* Opções de Múltipla Escolha */}
+                <div className="space-y-4">
+                    {questaoAtual.opcoes.map((opcao, index) => {
+                        let estilo = "bg-white hover:bg-gray-100 text-gray-700";
+                        if (respostaSelecionada !== null) {
+                            if (opcao === questaoAtual.respostaCorreta) {
+                                estilo = "bg-green-100 text-green-700 font-bold border-2 border-green-500"; // Correta
+                            } else if (opcao === respostaSelecionada) {
+                                estilo = "bg-red-100 text-red-700 border-2 border-red-500"; // Errada selecionada
+                            } else {
+                                estilo = "bg-gray-50 text-gray-500 opacity-60"; // Não selecionada
+                            }
+                        }
+
+                        return (
+                            <button
+                                key={index}
+                                onClick={() => verificarResposta(opcao)}
+                                disabled={respostaSelecionada !== null}
+                                className={`w-full text-left p-4 rounded-lg shadow transition duration-200 ease-in-out ${estilo}`}
+                            >
+                                <span className="font-semibold mr-2">{String.fromCharCode(65 + index)}.</span> {opcao}
+                            </button>
+                        );
+                    })}
+                </div>
+
+                {/* Feedback Imediato e Botão Avançar */}
+                {respostaSelecionada !== null && (
+                    <div className="mt-8">
+                        <div className={`p-4 rounded-lg shadow-inner ${respostaSelecionada === questaoAtual.respostaCorreta ? 'bg-green-50 border border-green-300' : 'bg-red-50 border border-red-300'}`}>
+                            <h3 className="font-bold text-lg mb-2">
+                                {respostaSelecionada === questaoAtual.respostaCorreta ? '✅ Resposta Correta!' : '❌ Resposta Incorreta!'}
+                            </h3>
+                            <p className="text-gray-700">
+                                **Justificativa:** {questaoAtual.justificativa}
+                            </p>
+                        </div>
+                        <div className="text-right mt-6">
+                            <button
+                                onClick={avancarQuestao}
+                                className="px-8 py-3 bg-blue-600 text-white font-bold rounded-lg shadow-md hover:bg-blue-700 transition duration-300"
+                            >
+                                {proximoIndex < totalQuestoes ? 'Próxima Questão »' : 'Finalizar Quiz »'}
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+    };
+
+    // Renderiza a Tela de Resultado
+    const renderResultado = () => (
+        <div className="text-center p-8 bg-white rounded-lg shadow-2xl">
+            <h2 className="text-4xl font-extrabold text-blue-700 mb-4">
+                ✨ Quiz Finalizado! ✨
+            </h2>
+            <p className="text-xl text-gray-600 mb-8">
+                Parabéns, você concluiu a revisão de **{materiaSelecionada}**.
+            </p>
+
+            <div className="flex justify-center space-x-10 mb-10">
+                <div className="p-6 bg-green-50 rounded-lg border-b-4 border-green-500">
+                    <p className="text-3xl font-bold text-green-600">{placar.acertos}</p>
+                    <p className="text-lg text-green-700">Acertos</p>
+                </div>
+                <div className="p-6 bg-red-50 rounded-lg border-b-4 border-red-500">
+                    <p className="text-3xl font-bold text-red-600">{placar.erros}</p>
+                    <p className="text-lg text-red-700">Erros</p>
+                </div>
+            </div>
+
+            <button
+                onClick={voltarInicio}
+                className="px-10 py-4 bg-yellow-600 text-white font-bold rounded-lg shadow-lg hover:bg-yellow-700 transition duration-300 transform hover:scale-105"
+            >
+                Voltar ao Menu Principal
+            </button>
+        </div>
+    );
+
+    // =================================================================
+    // 5. RENDERIZAÇÃO CONDICIONAL PRINCIPAL
+    // =================================================================
+    let conteudo;
+    if (materiaSelecionada === null) {
+        conteudo = renderDashboard();
+    } else if (quizFinalizado) {
+        conteudo = renderResultado();
+    } else {
+        conteudo = renderQuiz();
+    }
+
+    return (
+        <div className="min-h-screen bg-gray-100 p-4 sm:p-8 flex justify-center items-start pt-10">
+            <div className="w-full max-w-4xl p-6 md:p-10 bg-white rounded-xl shadow-2xl">
+                <header className="mb-8">
+                    <h1 className="text-4xl font-extrabold text-blue-900 border-b-4 border-blue-500 pb-2">
+                        ⚖️ UNIP | Foco OAB-SP - Revisão 1º Semestre
+                    </h1>
+                </header>
+                {conteudo}
+            </div>
+        </div>
+    );
+};
+
+export default DisciplinasApp;
+
+// =================================================================
+// ESTRUTURA PARA EXPORTAÇÃO (Se estiver usando um setup com create-react-app ou similar)
+// Se for um ambiente simples de HTML, o componente precisa ser renderizado:
+/*
+import { createRoot } from 'react-dom/client';
+const container = document.getElementById('root');
+const root = createRoot(container);
+root.render(<DisciplinasApp />);
+*/
